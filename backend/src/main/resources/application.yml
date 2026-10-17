@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: liketime
+  # Локальные секреты (логин/пароль БД) лежат в application-local.properties и не попадают в git
+  config:
+    import: optional:classpath:application-local.properties
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Схему ведёт только Flyway, Hibernate лишь проверяет соответствие сущностей
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          # Все даты в БД хранятся в UTC
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: UTC
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
