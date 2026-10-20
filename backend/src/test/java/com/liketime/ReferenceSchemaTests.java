@@ -31,6 +31,15 @@ class ReferenceSchemaTests {
     }
 
     @Test
+    void v2CreatesGroupTables() {
+        List<String> tables = jdbc.queryForList(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()",
+                String.class);
+
+        assertThat(tables).contains("study_groups", "group_students");
+    }
+
+    @Test
     void userRoleIsRestrictedToKnownValues() {
         // Ошибка CHECK в MySQL не переводится Spring в DataIntegrityViolationException, поэтому ловим базовый тип
         assertThatThrownBy(() -> insertUser("bad_role", "BOSS"))
