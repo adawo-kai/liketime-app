@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/liketime_dev?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&connectionTimeZone=UTC&allowPublicKeyRetrieval=false&useSSL=false
+    url: jdbc:mysql://localhost:3306/liketime_dev?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&connectionTimeZone=UTC&sslMode=PREFERRED
 logging:
   level:
     com.liketime: DEBUG
