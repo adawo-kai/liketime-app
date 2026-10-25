@@ -80,4 +80,21 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Сборка для сервера (mvnw -Prelease package): локальные секреты разработчика в jar не попадают -->
+        <profile>
+            <id>release</id>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <excludes>
+                            <exclude>application-local.properties</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
 </project>

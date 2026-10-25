@@ -1,5 +1,6 @@
 package com.liketime.auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.core.Authentication;
@@ -24,8 +25,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request.login(), request.password());
+    public TokenResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+        return authService.login(request.login(), request.password(), http.getRemoteAddr());
     }
 
     @GetMapping("/me")

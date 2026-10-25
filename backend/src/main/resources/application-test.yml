@@ -2,6 +2,10 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/liketime_test?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&connectionTimeZone=UTC&sslMode=PREFERRED
 liketime:
+  devices:
+    # Только для тестов; в dev и prod секреты устройств задаются в application-local.properties
+    secrets:
+      test-key: test-only-device-secret-key
   security:
     # Только для тестов, в dev и prod берётся из application-local.properties
     jwt-secret: test-only-secret-key-that-is-at-least-64-characters-long-for-hs256-signing

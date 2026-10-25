@@ -1,0 +1,28 @@
+# Боевой профиль. Секреты здесь не хранятся: их задают в config/application-local.properties рядом с jar
+# или в переменных окружения (см. docs/deployment.md).
+spring:
+  datasource:
+    url: ${LIKETIME_DB_URL:jdbc:mysql://localhost:3306/liketime?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&connectionTimeZone=UTC&sslMode=PREFERRED}
+  jpa:
+    show-sql: false
+
+server:
+  port: ${LIKETIME_PORT:8080}
+  # Если перед приложением стоит прокси (nginx, Caddy), настоящий адрес клиента берётся из заголовков прокси
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+  error:
+    include-message: never
+    include-stacktrace: never
+
+logging:
+  level:
+    root: INFO
+    com.liketime: INFO
+  file:
+    name: logs/liketime.log
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 30

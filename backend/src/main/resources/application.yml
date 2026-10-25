@@ -1,9 +1,10 @@
 spring:
   application:
     name: liketime
-  # Локальные секреты (логин/пароль БД) лежат в application-local.properties и не попадают в git
+  # Локальные секреты (логин/пароль БД, ключи) лежат в application-local.properties и не попадают в git.
+  # В разработке файл берётся из src/main/resources, на сервере из папки config рядом с jar.
   config:
-    import: optional:classpath:application-local.properties
+    import: optional:classpath:application-local.properties,optional:file:./config/application-local.properties
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:

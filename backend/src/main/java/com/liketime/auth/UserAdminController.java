@@ -38,8 +38,8 @@ public class UserAdminController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserView create(@Valid @RequestBody CreateUserRequest request) {
-        return service.create(request);
+    public UserView create(@Valid @RequestBody CreateUserRequest request, Authentication authentication) {
+        return service.create(request, authentication.getName());
     }
 
     @PatchMapping("/{id}")
@@ -50,8 +50,9 @@ public class UserAdminController {
 
     @PutMapping("/{id}/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void resetPassword(@PathVariable Long id, @Valid @RequestBody PasswordRequest request) {
-        service.resetPassword(id, request.password());
+    public void resetPassword(@PathVariable Long id, @Valid @RequestBody PasswordRequest request,
+                              Authentication authentication) {
+        service.resetPassword(id, request.password(), authentication.getName());
     }
 
     public record CreateUserRequest(

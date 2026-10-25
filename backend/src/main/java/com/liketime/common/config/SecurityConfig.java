@@ -48,7 +48,11 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/auth/login", "/actuator/health", "/actuator/health/**").permitAll()
-                        .anyRequest().authenticated())
+                        // Устройства входят не по паролю пользователя, а по серийному номеру и ключу (см. IngestController)
+                        .requestMatchers("/api/ingest/**").permitAll()
+                        .requestMatchers("/api/**", "/actuator/**").authenticated()
+                        // Остальное - файлы сайта (React) и его адреса. Данные отдаются только через /api.
+                        .anyRequest().permitAll())
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter)));
         return http.build();
     }

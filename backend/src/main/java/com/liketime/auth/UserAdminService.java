@@ -1,9 +1,11 @@
 package com.liketime.auth;
 
+import com.liketime.audit.AuditService;
 import com.liketime.auth.UserAdminController.CreateUserRequest;
 import com.liketime.auth.UserAdminController.UpdateUserRequest;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,10 +19,12 @@ public class UserAdminService {
 
     private final UserAccountRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService audit;
 
-    public UserAdminService(UserAccountRepository users, PasswordEncoder passwordEncoder) {
+    public UserAdminService(UserAccountRepository users, PasswordEncoder passwordEncoder, AuditService audit) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
+        this.audit = audit;
     }
 
     @Transactional(readOnly = true)
@@ -28,7 +32,7 @@ public class UserAdminService {
         return users.findAll(Sort.by("login")).stream().map(UserView::from).toList();
     }
 
-    public UserView create(CreateUserRequest request) {
+    public UserView create(CreateUserRequest request, String actorLogin) {
         if (users.existsByLogin(request.login())) {
             throw conflict("Пользователь с таким логином уже есть");
         }
@@ -37,7 +41,10 @@ public class UserAdminService {
                 passwordEncoder.encode(request.password()),
                 request.fullName(),
                 request.role());
-        return UserView.from(users.save(user));
+        UserAccount saved = users.save(user);
+        audit.record(actorLogin, "USER_CREATE", "user", saved.getId(),
+                Map.of("login", saved.getLogin(), "role", saved.getRole().name()));
+        return UserView.from(saved);
     }
 
     /**
@@ -58,18 +65,25 @@ public class UserAdminService {
             throw conflict("Должен остаться хотя бы один активный администратор");
         }
 
+        Map<String, Object> details = Map.of(
+                "login", user.getLogin(),
+                "roleBefore", user.getRole().name(), "roleAfter", newRole.name(),
+                "enabledBefore", user.isEnabled(), "enabledAfter", newEnabled);
         if (user.getRole() != newRole) {
             user.changeRole(newRole);
         }
         if (user.isEnabled() != newEnabled) {
             user.setEnabled(newEnabled);
         }
+        audit.record(actorLogin, "USER_UPDATE", "user", id, details);
         return UserView.from(user);
     }
 
-    public void resetPassword(Long id, String newPassword) {
+    /** Сам пароль в журнал не пишется, только факт сброса */
+    public void resetPassword(Long id, String newPassword, String actorLogin) {
         UserAccount user = find(id);
         user.changePasswordHash(passwordEncoder.encode(newPassword));
+        audit.record(actorLogin, "USER_PASSWORD_RESET", "user", id, Map.of("login", user.getLogin()));
     }
 
     private UserAccount find(Long id) {

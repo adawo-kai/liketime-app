@@ -23,25 +23,36 @@ public class AuthService {
     /** Хеш для несуществующих логинов: время ответа не выдаёт, существует пользователь или нет */
     private final String dummyHash;
 
+    private final LoginAttemptLimiter limiter;
+
     public AuthService(UserAccountRepository users, PasswordEncoder passwordEncoder,
-                       JwtEncoder jwtEncoder, LikeTimeSecurityProperties properties) {
+                       JwtEncoder jwtEncoder, LikeTimeSecurityProperties properties, LoginAttemptLimiter limiter) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
         this.properties = properties;
+        this.limiter = limiter;
         this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
-    public TokenResponse login(String login, String rawPassword) {
+    /**
+     * Вход по логину и паролю. Перед проверкой пароля смотрим, не заблокирован ли вход после серии
+     * неудач: заблокированному клиенту отвечаем 429, даже если пароль верный.
+     */
+    public TokenResponse login(String login, String rawPassword, String clientIp) {
+        limiter.assertAllowed(login, clientIp);
         UserAccount user = users.findByLogin(login).orElse(null);
         if (user == null) {
             passwordEncoder.matches(rawPassword, dummyHash);
+            limiter.recordFailure(login, clientIp);
             throw invalidCredentials();
         }
         boolean passwordMatches = passwordEncoder.matches(rawPassword, user.getPasswordHash());
         if (!passwordMatches || !user.isEnabled()) {
+            limiter.recordFailure(login, clientIp);
             throw invalidCredentials();
         }
+        limiter.recordSuccess(login, clientIp);
         return issueToken(user);
     }
 

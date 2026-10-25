@@ -1,6 +1,7 @@
 package com.liketime.common;
 
 import java.util.Map;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +20,13 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> handleStatus(ResponseStatusException e) {
         String message = e.getReason() != null ? e.getReason() : e.getStatusCode().toString();
         return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", message));
+    }
+
+    /** Нарушение уникальности или связи, например при одновременных запросах. Подробности базы не раскрываем. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<Map<String, String>> handleIntegrity(DataIntegrityViolationException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "Данные изменились или противоречат ограничениям. Обновите страницу и повторите"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

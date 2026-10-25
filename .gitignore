@@ -15,3 +15,10 @@ Thumbs.db
 **/.env
 **/.env.*
 *.local
+
+# Сборка для сервера и логи
+release/
+logs/
+backend/logs/
+backend/src/main/resources/static/
+backups/
