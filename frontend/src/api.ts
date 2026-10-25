@@ -77,3 +77,47 @@ export async function login(loginName: string, password: string): Promise<Me> {
   setToken(token.accessToken);
   return api.get<Me>('/api/auth/me');
 }
+
+/** Имя файла из заголовка Content-Disposition (понимает и filename*=UTF-8''..., и filename="...") */
+export function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const encoded = /filename\*\s*=\s*(?:UTF-8|utf-8)''([^;]+)/.exec(header);
+  if (encoded) {
+    try { return decodeURIComponent(encoded[1].trim()); } catch { /* падаем дальше на простой вариант */ }
+  }
+  const plain = /filename\s*=\s*"?([^";]+)"?/.exec(header);
+  return plain ? plain[1].trim() : null;
+}
+
+/**
+ * Скачивает файл (например, CSV для Excel). Обычная ссылка не подойдёт: запрос должен нести токен входа,
+ * поэтому файл загружается через fetch и отдаётся браузеру как вложение.
+ */
+export async function downloadFile(url: string, fallbackName: string): Promise<void> {
+  const token = getToken();
+  let response: Response;
+  try {
+    response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(0, 'Нет связи с сервером. Проверьте, что backend запущен.');
+  }
+  if (!response.ok) {
+    if (response.status === 401 && token) onUnauthorized();
+    let message = response.status === 403 ? 'Недостаточно прав для этого действия' : `Ошибка ${response.status}`;
+    try {
+      const data = await response.json();
+      if (data?.message) message = data.message;
+    } catch { /* тела ответа нет */ }
+    throw new ApiError(response.status, message);
+  }
+  const blob = await response.blob();
+  const name = filenameFromDisposition(response.headers.get('Content-Disposition')) ?? fallbackName;
+  const link = document.createElement('a');
+  const objectUrl = URL.createObjectURL(blob);
+  link.href = objectUrl;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}

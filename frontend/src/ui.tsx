@@ -87,3 +87,48 @@ export function blankToNull(v: string): string | null {
   const t = v.trim();
   return t === '' ? null : t;
 }
+
+// ----- общие элементы для экранов расписания, зарплаты и отчётов -----
+
+export function Tabs<T extends string>({ tabs, value, onChange }: {
+  tabs: { id: T; label: string }[]; value: T; onChange: (id: T) => void;
+}) {
+  return (
+    <div className="tabs" role="tablist">
+      {tabs.map((t) => (
+        <button key={t.id} role="tab" aria-selected={t.id === value} type="button"
+                className={t.id === value ? 'tab active' : 'tab'} onClick={() => onChange(t.id)}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export type Tone = 'ok' | 'off' | 'warn' | 'info' | 'danger';
+
+export function Badge({ tone, children }: { tone: Tone; children: ReactNode }) {
+  return <span className={`badge ${tone}`}>{children}</span>;
+}
+
+/** Запускает действие и показывает его ошибку; удобно для кнопок «Рассчитать», «Отменить» и т. п. */
+export function useActionRunner() {
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const run = useCallback(async (action: () => Promise<unknown>): Promise<boolean> => {
+    setError(null);
+    setBusy(true);
+    try {
+      await action();
+      return true;
+    } catch (e) {
+      setError(errorText(e));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  return { error, busy, run, clearError: () => setError(null) };
+}

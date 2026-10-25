@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { api, type Group, type Member, type Student, type Teacher } from '../api';
 import { errorText, ErrorBox, Field, FormModal, useLoad } from '../ui';
+import SlotsPanel from './SlotsPanel';
 
 export default function GroupDetailPage() {
   const { id } = useParams();
@@ -70,6 +71,7 @@ export default function GroupDetailPage() {
           </tbody>
         </table>
       </div>
+      <SlotsPanel groupId={id!} canEdit={staff && active} />
       {adding && <AddStudentForm groupId={id!} currentIds={(members.data ?? []).filter((m) => m.leftOn === null).map((m) => m.studentId)}
                                  onClose={() => setAdding(false)} onSaved={refresh} />}
     </>

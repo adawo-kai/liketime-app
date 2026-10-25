@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, api, getToken, login, setToken, setUnauthorizedHandler } from './api';
+import {
+  ApiError, api, downloadFile, filenameFromDisposition, getToken, login, setToken, setUnauthorizedHandler,
+} from './api';
 
 function jsonResponse(status: number, body?: unknown): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -129,5 +131,93 @@ describe('api client', () => {
     expect(me.role).toBe('ADMIN');
     const [url] = fetchMock.mock.calls[1];
     expect(url).toBe('/api/auth/me');
+  });
+});
+
+describe('filenameFromDisposition', () => {
+  it('понимает filename*=UTF-8 с кодированием', () => {
+    expect(filenameFromDisposition("attachment; filename*=UTF-8''salary-2026-10-01_2026-10-31.csv")).toBe('salary-2026-10-01_2026-10-31.csv');
+    expect(filenameFromDisposition("attachment; filename*=UTF-8''%D0%B8%D1%82%D0%BE%D0%B3.csv")).toBe('итог.csv');
+  });
+
+  it('понимает обычный filename в кавычках и без них', () => {
+    expect(filenameFromDisposition('attachment; filename="report 1.csv"')).toBe('report 1.csv');
+    expect(filenameFromDisposition('attachment; filename=report.csv')).toBe('report.csv');
+  });
+
+  it('из реального ответа сервера берёт filename*, а не закодированный filename', () => {
+    const header = "attachment; filename=\"=?UTF-8?Q?salary-2026-10-25=5F2026-10-25.csv?=\"; filename*=UTF-8''salary-2026-10-25_2026-10-25.csv";
+    expect(filenameFromDisposition(header)).toBe('salary-2026-10-25_2026-10-25.csv');
+  });
+
+  it('возвращает null, если имени нет', () => {
+    expect(filenameFromDisposition(null)).toBeNull();
+    expect(filenameFromDisposition('attachment')).toBeNull();
+  });
+});
+
+describe('downloadFile', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+  let clicked: HTMLAnchorElement[];
+
+  beforeEach(() => {
+    localStorage.clear();
+    setUnauthorizedHandler(() => {});
+    fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+    clicked = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(this);
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('скачивает файл с токеном и берёт имя из заголовка', async () => {
+    setToken('tok');
+    fetchMock.mockResolvedValue(new Response('a;b', {
+      status: 200, headers: { 'Content-Disposition': "attachment; filename*=UTF-8''salary.csv" },
+    }));
+
+    await downloadFile('/api/salary/periods/1/export.csv', 'fallback.csv');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/salary/periods/1/export.csv');
+    expect(init.headers.Authorization).toBe('Bearer tok');
+    expect(clicked).toHaveLength(1);
+    expect(clicked[0].download).toBe('salary.csv');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
+  });
+
+  it('использует запасное имя, если заголовка нет', async () => {
+    fetchMock.mockResolvedValue(new Response('x', { status: 200 }));
+
+    await downloadFile('/api/reports/attendance.csv', 'attendance.csv');
+
+    expect(clicked[0].download).toBe('attendance.csv');
+  });
+
+  it('при ошибке бросает ApiError с понятным текстом и ничего не скачивает', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 403 }));
+
+    const error = await downloadFile('/api/x.csv', 'x.csv').catch((e) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.message).toBe('Недостаточно прав для этого действия');
+    expect(clicked).toHaveLength(0);
+  });
+
+  it('при потере связи сообщает, что backend недоступен', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const error = await downloadFile('/api/x.csv', 'x.csv').catch((e) => e);
+
+    expect(error.status).toBe(0);
+    expect(error.message).toContain('Нет связи с сервером');
   });
 });
