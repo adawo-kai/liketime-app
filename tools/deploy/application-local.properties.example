@@ -1,0 +1,44 @@
+# Шаблон настроек сервера. Скопируйте в config/application-local.properties рядом с liketime.jar
+# и заполните. Файл с настоящими значениями НЕЛЬЗЯ коммитить в git и пересылать.
+
+# --- База данных MySQL ---
+# По умолчанию: localhost:3306, база liketime. Другой адрес: раскомментируйте и поправьте строку ниже.
+#spring.datasource.url=jdbc:mysql://localhost:3306/liketime?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&connectionTimeZone=UTC&sslMode=PREFERRED
+spring.datasource.username=liketime_app
+spring.datasource.password=ЗАМЕНИТЕ_ПАРОЛЬ_БАЗЫ
+
+# --- Подпись токенов входа ---
+# Случайная строка не короче 32 символов (лучше 64+). Сгенерировать:
+#   $b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+# Если сменить, все войдут заново.
+liketime.security.jwt-secret=ЗАМЕНИТЕ_НА_СЛУЧАЙНУЮ_СТРОКУ_ДЛИННОЙ_64_СИМВОЛА_И_БОЛЬШЕ
+
+# Попытки входа: сколько неудач подряд и на сколько блокировка (по умолчанию 5 и 15 минут)
+#liketime.security.login-max-attempts=5
+#liketime.security.login-lockout=15m
+
+# --- Первый запуск ---
+# Первый администратор создаётся, только пока в системе нет ни одного пользователя.
+# После первого входа смените пароль и удалите эти две строки.
+liketime.bootstrap.admin.login=admin
+liketime.bootstrap.admin.password=ЗАМЕНИТЕ_ПАРОЛЬ_АДМИНИСТРАТОРА_МИНИМУМ_10_СИМВОЛОВ
+
+# Стандартная ставка за приход ученика (сом). Создаётся один раз, пока нет ни одной ставки; дальше меняется в интерфейсе.
+liketime.bootstrap.default-visit-rate=100
+#liketime.bootstrap.default-visit-rate-from=2026-01-01
+
+# --- Устройства Dahua ---
+# Ключ устройства. Имя после secrets. (здесь main) указывается в карточке устройства в поле «Имя ключа».
+# Тот же ключ вводится в самом устройстве. Случайная строка 32+ символа.
+liketime.devices.secrets.main=ЗАМЕНИТЕ_НА_КЛЮЧ_УСТРОЙСТВА
+
+# Порог уверенности распознавания (0..1): ниже события не засчитываются
+#liketime.devices.min-confidence=0.8
+
+# --- Правила посещаемости ---
+#liketime.attendance.early-minutes=30
+#liketime.attendance.late-after-minutes=10
+#liketime.attendance.teacher-edit-days=3
+
+# Часовой пояс школы (даты занятий, периоды зарплаты)
+#liketime.timezone=Asia/Bishkek

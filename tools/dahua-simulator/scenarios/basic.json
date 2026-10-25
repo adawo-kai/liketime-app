@@ -1,0 +1,9 @@
+{
+  "name": "Обычное начало занятия: трое учеников приходят вовремя, один с небольшой задержкой",
+  "events": [
+    { "personId": "P-1", "offsetSeconds": -300, "confidence": 0.96, "note": "пришёл заранее" },
+    { "personId": "P-2", "offsetSeconds": -120, "confidence": 0.93 },
+    { "personId": "P-3", "offsetSeconds": -30, "confidence": 0.91 },
+    { "personId": "P-4", "offsetSeconds": 0, "confidence": 0.88, "note": "последний" }
+  ]
+}

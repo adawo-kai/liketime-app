@@ -1,0 +1,11 @@
+{
+  "name": "Сложные случаи: дубли, чужое лицо, низкая уверенность, события не по порядку",
+  "events": [
+    { "personId": "P-1", "offsetSeconds": -60, "confidence": 0.95, "eventId": "edge-dup-1", "repeat": 3, "note": "одно событие отправлено трижды: отметка должна быть одна" },
+    { "personId": "P-UNKNOWN", "offsetSeconds": -50, "confidence": 0.97, "note": "лицо не привязано ни к одному ученику" },
+    { "personId": "P-2", "offsetSeconds": -40, "confidence": 0.45, "note": "слишком низкая уверенность: не засчитывается" },
+    { "personId": "P-3", "offsetSeconds": -20, "confidence": 93, "note": "уверенность в процентах" },
+    { "personId": "P-4", "offsetSeconds": -10, "note": "уверенность не передана" },
+    { "personId": "P-5", "offsetSeconds": -900, "confidence": 0.95, "note": "событие из прошлого (устройство было без связи)" }
+  ]
+}
