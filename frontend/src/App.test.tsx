@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -80,6 +81,17 @@ describe('меню по ролям', () => {
   it('преподаватель открывает свою зарплату, а раздел зарплаты персонала ему недоступен', async () => {
     renderAs('TEACHER', '/my-salary');
     expect(await screen.findByRole('heading', { name: 'Моя зарплата' })).toBeInTheDocument();
+  });
+
+  it.each(['ADMIN', 'MANAGER', 'TEACHER'] as const)('%s: кнопка «Сменить пароль» открывает окно', async (role) => {
+    const user = userEvent.setup();
+    renderAs(role);
+
+    await user.click(screen.getByRole('button', { name: 'Сменить пароль' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Сменить пароль' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Отмена' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('без входа показывается страница входа', () => {

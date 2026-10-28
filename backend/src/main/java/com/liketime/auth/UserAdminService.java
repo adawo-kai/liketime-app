@@ -33,6 +33,7 @@ public class UserAdminService {
     }
 
     public UserView create(CreateUserRequest request, String actorLogin) {
+        PasswordPolicy.check(request.password());
         if (users.existsByLogin(request.login())) {
             throw conflict("Пользователь с таким логином уже есть");
         }
@@ -81,6 +82,7 @@ public class UserAdminService {
 
     /** Сам пароль в журнал не пишется, только факт сброса */
     public void resetPassword(Long id, String newPassword, String actorLogin) {
+        PasswordPolicy.check(newPassword);
         UserAccount user = find(id);
         user.changePasswordHash(passwordEncoder.encode(newPassword));
         audit.record(actorLogin, "USER_PASSWORD_RESET", "user", id, Map.of("login", user.getLogin()));

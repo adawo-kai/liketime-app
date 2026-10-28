@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import { ROLE_LABELS, type Role } from './api';
+import ChangePasswordModal from './ChangePasswordModal';
 import LoginPage from './pages/LoginPage';
 import GroupsPage from './pages/GroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
@@ -37,6 +39,7 @@ export const NAV: NavItem[] = [
 
 export default function App() {
   const { me, loading, signOut } = useAuth();
+  const [changingPassword, setChangingPassword] = useState(false);
 
   if (loading) return <div className="center muted">Загрузка…</div>;
   if (!me) return (
@@ -59,6 +62,7 @@ export default function App() {
         <div className="user">
           <div className="name">{me.fullName}</div>
           <div className="muted small">{ROLE_LABELS[me.role]}</div>
+          <button className="btn ghost small" onClick={() => setChangingPassword(true)}>Сменить пароль</button>
           <button className="btn ghost small" onClick={signOut}>Выйти</button>
         </div>
       </aside>
@@ -81,6 +85,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/schedule" replace />} />
         </Routes>
       </main>
+      {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} />}
     </div>
   );
 }

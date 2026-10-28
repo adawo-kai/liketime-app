@@ -3,6 +3,8 @@ package com.liketime.common.config;
 import com.liketime.auth.UserAccount;
 import com.liketime.auth.UserAccountRepository;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -67,6 +69,13 @@ public class SecurityConfig {
             UserAccount user = users.findByLogin(jwt.getSubject())
                     .filter(UserAccount::isEnabled)
                     .orElseThrow(() -> new InvalidBearerTokenException("Пользователь не найден или отключён"));
+            // Время в токене хранится с точностью до секунды, поэтому сравниваем тоже с точностью до секунды:
+            // токен, выданный сразу после смены пароля, остаётся действительным
+            if (user.getPasswordChangedAt() != null && jwt.getIssuedAt() != null
+                    && jwt.getIssuedAt().isBefore(user.getPasswordChangedAt().truncatedTo(ChronoUnit.SECONDS)
+                    .toInstant(ZoneOffset.UTC))) {
+                throw new InvalidBearerTokenException("Пароль был изменён, войдите заново");
+            }
             return new JwtAuthenticationToken(
                     jwt,
                     List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),

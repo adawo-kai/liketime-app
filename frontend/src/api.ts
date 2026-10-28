@@ -121,3 +121,12 @@ export async function downloadFile(url: string, fallbackName: string): Promise<v
   link.remove();
   URL.revokeObjectURL(objectUrl);
 }
+
+/**
+ * Смена собственного пароля. Сервер закрывает все прежние сеансы и возвращает новый токен,
+ * который сохраняется, чтобы текущий сеанс не прервался.
+ */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const token = await api.put<{ accessToken: string }>('/api/auth/password', { currentPassword, newPassword });
+  setToken(token.accessToken);
+}

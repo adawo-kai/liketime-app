@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  ApiError, api, downloadFile, filenameFromDisposition, getToken, login, setToken, setUnauthorizedHandler,
+  ApiError, api, changePassword, downloadFile, filenameFromDisposition, getToken, login, setToken, setUnauthorizedHandler,
 } from './api';
 
 function jsonResponse(status: number, body?: unknown): Response {
@@ -219,5 +219,47 @@ describe('downloadFile', () => {
 
     expect(error.status).toBe(0);
     expect(error.message).toContain('Нет связи с сервером');
+  });
+});
+
+describe('changePassword', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    setUnauthorizedHandler(() => {});
+    fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('отправляет PUT с обоими паролями и сохраняет выданный токен', async () => {
+    setToken('old');
+    fetchMock.mockResolvedValue(jsonResponse(200, { accessToken: 'brand-new', tokenType: 'Bearer', expiresIn: 28800 }));
+
+    await changePassword('old-password-1', 'new-password-2');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/auth/password');
+    expect(init.method).toBe('PUT');
+    expect(init.headers.Authorization).toBe('Bearer old');
+    expect(JSON.parse(init.body)).toEqual({ currentPassword: 'old-password-1', newPassword: 'new-password-2' });
+    expect(getToken()).toBe('brand-new');
+  });
+
+  it('неверный текущий пароль (400) не выкидывает пользователя из системы', async () => {
+    setToken('old');
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+    fetchMock.mockResolvedValue(jsonResponse(400, { message: 'Текущий пароль указан неверно' }));
+
+    const error = await changePassword('wrong', 'new-password-2').catch((e) => e);
+
+    expect(error.message).toBe('Текущий пароль указан неверно');
+    expect(handler).not.toHaveBeenCalled();
+    expect(getToken()).toBe('old');
   });
 });

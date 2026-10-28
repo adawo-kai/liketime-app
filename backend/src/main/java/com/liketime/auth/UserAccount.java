@@ -35,6 +35,10 @@ public class UserAccount {
     @Column(nullable = false)
     private boolean enabled;
 
+    /** Токены, выданные раньше этого момента, недействительны (сменили или сбросили пароль) */
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -66,6 +70,7 @@ public class UserAccount {
 
     public void changePasswordHash(String newHash) {
         this.passwordHash = newHash;
+        this.passwordChangedAt = now();
         touch();
     }
 
@@ -99,6 +104,10 @@ public class UserAccount {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
     }
 
     public LocalDateTime getCreatedAt() {
