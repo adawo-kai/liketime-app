@@ -9,3 +9,10 @@ liketime:
   security:
     # Только для тестов, в dev и prod берётся из application-local.properties
     jwt-secret: test-only-secret-key-that-is-at-least-64-characters-long-for-hs256-signing
+  # Тесты не должны зависеть от личного файла настроек разработчика: стартовые заготовки отключены,
+  # иначе при запуске в тестовой базе навсегда оставались бы администратор и ставка
+  bootstrap:
+    admin:
+      login: ""
+      password: ""
+    default-visit-rate: ""
