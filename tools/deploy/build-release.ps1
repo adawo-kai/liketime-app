@@ -53,7 +53,9 @@ Write-Host "JDK: $env:JAVA_HOME"
 Step 'Сайт: установка зависимостей и проверка'
 Push-Location $frontend
 try {
-    Run 'npm' @('ci')
+    # На чистой машине ставим строго по package-lock.json (npm ci). Если node_modules уже есть, ее не удаляем:
+    # запущенный "npm run dev" держит файлы внутри, и npm ci падает с EPERM. npm install по тому же lock-файлу безопасен.
+    if (Test-Path 'node_modules') { Run 'npm' @('install', '--no-audit', '--no-fund') } else { Run 'npm' @('ci') }
     if (-not $SkipTests) { Run 'npm' @('test') }
     Step 'Сайт: сборка'
     Run 'npm' @('run', 'build')
